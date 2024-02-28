@@ -33,5 +33,7 @@ func main() {
 	r.Post("/editpost/:userid/:postid", controller.EditPost)
 	r.Post("/deletepost/:userid/:postid", controller.DeletePost)
 
+	r.Post("/addcomment/:userid/:postid", controller.AddCommentToPost)
+
 	r.Listen(":3000")
 }
