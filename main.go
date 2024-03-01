@@ -39,5 +39,8 @@ func main() {
 	r.Post("/likepost/:userid/:postid", controller.LikeToPost)
 	r.Post("/likecomment/:userid/:postid/:commentid", controller.LikeToComment)
 
+	r.Post("/addfriend/:userid/:friendid", controller.AddFriend)
+	r.Post("/removefriend/:userid/:friendid", controller.RemoveFriend)
+
 	r.Listen(":3000")
 }
