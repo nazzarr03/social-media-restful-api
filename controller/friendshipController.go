@@ -28,11 +28,19 @@ func AddFriend(c *fiber.Ctx) {
 		return
 	}
 
-
 	friendship := models.Friendship{
 		UserID:   user.UserID,
 		FriendID: friend.UserID,
 		IsActive: true,
+	}
+	
+	database.Db.First(&friendship, "user_id = ? AND friend_id = ?", user.UserID, friend.UserID)
+
+	if friendship.FriendshipID != 0 {
+		c.Status(400).JSON(fiber.Map{
+			"message": "Friendship already exists",
+		})
+		return
 	}
 
 	database.Db.Create(&friendship)
@@ -73,11 +81,11 @@ func RemoveFriend(c *fiber.Ctx) {
 
 	friendship := models.Friendship{}
 
-	database.Db.Where("user_id = ? AND friend_id = ?", user.UserID, friend.UserID).First(&friendship)
+	database.Db.First(&friendship, "user_id = ? AND friend_id = ?", user.UserID, friend.UserID)
 
 	if friendship.FriendshipID == 0 {
-		c.Status(404).JSON(fiber.Map{
-			"message": "Friendship not found",
+		c.Status(400).JSON(fiber.Map{
+			"message": "Friendship does not exist",
 		})
 		return
 	}
