@@ -212,7 +212,7 @@ func AddCommentToComment(c *fiber.Ctx) {
 		ParentCommentID: &comment.CommentID,
 	})
 
-	database.Db.Save(&comment)
+	database.Db.Create(&comment)
 
 	database.Db.Preload("Comments", "comment_id != ?", comment.CommentID).First(&comment, "comment_id = ?", comment.CommentID)
 	

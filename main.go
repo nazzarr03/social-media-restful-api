@@ -36,5 +36,8 @@ func main() {
 	r.Post("/addcomment/:userid/:postid", controller.AddCommentToPost)
 	r.Post("/addsubcomment/:userid/:postid/:commentid", controller.AddCommentToComment)
 
+	r.Post("/likepost/:userid/:postid", controller.LikeToPost)
+	r.Post("/likecomment/:userid/:postid/:commentid", controller.LikeToComment)
+
 	r.Listen(":3000")
 }
