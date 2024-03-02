@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"github.com/nazzarr03/social-media-restful-api/models"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
