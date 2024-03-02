@@ -33,7 +33,7 @@ func AddFriend(c *fiber.Ctx) {
 		FriendID: friend.UserID,
 		IsActive: true,
 	}
-	
+
 	database.Db.First(&friendship, "user_id = ? AND friend_id = ?", user.UserID, friend.UserID)
 
 	if friendship.FriendshipID != 0 {

@@ -116,36 +116,36 @@ func AddCommentToPost(c *fiber.Ctx) {
 }
 
 func AddCommentToComment(c *fiber.Ctx) {
-    var request AddCommentRequest
+	var request AddCommentRequest
 
 	user := models.User{}
 	post := models.Post{}
 	comment := models.Comment{}
 
-    if err := c.BodyParser(&request); err != nil {
-        c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Cannot parse JSON",
-        })
-        return
-    }
+	if err := c.BodyParser(&request); err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot parse JSON",
+		})
+		return
+	}
 
-    database.Db.First(&comment, "comment_id = ?", c.Params("commentid"))
+	database.Db.First(&comment, "comment_id = ?", c.Params("commentid"))
 
-    if comment.CommentID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "Parent comment not found",
-        })
-        return
-    }
+	if comment.CommentID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Parent comment not found",
+		})
+		return
+	}
 
-    database.Db.First(&user, "user_id = ?", c.Params("userid"))
+	database.Db.First(&user, "user_id = ?", c.Params("userid"))
 
-    if user.UserID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "User not found",
-        })
-        return
-    }
+	if user.UserID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+		return
+	}
 
 	database.Db.First(&post, "post_id = ?", c.Params("postid"))
 
@@ -205,17 +205,17 @@ func AddCommentToComment(c *fiber.Ctx) {
 	}
 
 	comment.Comments = append(comment.Comments, models.Comment{
-		Content:  request.Content,
-		ImageURL: request.ImageURL,
-		PostID:   post.PostID,
-		UserID:   user.UserID,
+		Content:         request.Content,
+		ImageURL:        request.ImageURL,
+		PostID:          post.PostID,
+		UserID:          user.UserID,
 		ParentCommentID: &comment.CommentID,
 	})
 
 	database.Db.Create(&comment)
 
 	database.Db.Preload("Comments", "comment_id != ?", comment.CommentID).First(&comment, "comment_id = ?", comment.CommentID)
-	
+
 	if database.Db.Error != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Cannot create comment",

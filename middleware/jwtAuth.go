@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"strings"
 	"github.com/gofiber/fiber"
+	"strings"
 )
 
 func Authentication(secret string) fiber.Handler {

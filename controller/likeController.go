@@ -7,34 +7,34 @@ import (
 )
 
 func LikeToPost(c *fiber.Ctx) {
-    user := models.User{}
-    post := models.Post{}
+	user := models.User{}
+	post := models.Post{}
 
-    database.Db.First(&user, "user_id = ?", c.Params("userid"))
+	database.Db.First(&user, "user_id = ?", c.Params("userid"))
 
-    if user.UserID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "User not found",
-        })
-        return
-    }
+	if user.UserID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+		return
+	}
 
-    database.Db.First(&post, "post_id = ?", c.Params("postid"))
+	database.Db.First(&post, "post_id = ?", c.Params("postid"))
 
-    if post.PostID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "Post not found",
-        })
-        return
-    }
+	if post.PostID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Post not found",
+		})
+		return
+	}
 
-    like := models.Like{
-        UserID: user.UserID,
-        PostID: post.PostID,
-        IsLiked: true,
-    }
+	like := models.Like{
+		UserID:  user.UserID,
+		PostID:  post.PostID,
+		IsLiked: true,
+	}
 
-    database.Db.Create(&like)
+	database.Db.Create(&like)
 
 	if database.Db.Error != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -43,56 +43,56 @@ func LikeToPost(c *fiber.Ctx) {
 		return
 	}
 
-    c.Status(fiber.StatusCreated).JSON(fiber.Map{
-        "message": "Post liked",
-    })
+	c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Post liked",
+	})
 }
 
 func LikeToComment(c *fiber.Ctx) {
-    user := models.User{}
-    post := models.Post{}
-    comment := models.Comment{}
+	user := models.User{}
+	post := models.Post{}
+	comment := models.Comment{}
 
-    database.Db.First(&user, "user_id = ?", c.Params("userid"))
+	database.Db.First(&user, "user_id = ?", c.Params("userid"))
 
-    if user.UserID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "User not found",
-        })
-    }
+	if user.UserID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
 
-    database.Db.First(&post, "post_id = ?", c.Params("postid"))
+	database.Db.First(&post, "post_id = ?", c.Params("postid"))
 
-    if post.PostID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "Post not found",
-        })
-    }
-    
-    database.Db.First(&comment, "comment_id = ?", c.Params("commentid"))
+	if post.PostID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Post not found",
+		})
+	}
 
-    if comment.CommentID == 0 {
-        c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "Comment not found",
-        })
-    }
+	database.Db.First(&comment, "comment_id = ?", c.Params("commentid"))
 
-    like := models.Like{
-        UserID: user.UserID,
-        PostID: post.PostID,
-        CommentID: &comment.CommentID,
-        IsLiked: true,
-    }
+	if comment.CommentID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Comment not found",
+		})
+	}
 
-    database.Db.Create(&like)
+	like := models.Like{
+		UserID:    user.UserID,
+		PostID:    post.PostID,
+		CommentID: &comment.CommentID,
+		IsLiked:   true,
+	}
 
-    if database.Db.Error != nil {
-        c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Cannot create like to comment",
-        })
-    }
+	database.Db.Create(&like)
 
-    c.Status(fiber.StatusCreated).JSON(fiber.Map{
-        "message": "Comment liked",
-    })
+	if database.Db.Error != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Cannot create like to comment",
+		})
+	}
+
+	c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Comment liked",
+	})
 }

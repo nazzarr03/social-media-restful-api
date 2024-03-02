@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Like struct {
 	LikeID    int       `json:"like_id" gorm:"primaryKey;autoIncrement"`

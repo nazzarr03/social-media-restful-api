@@ -22,7 +22,6 @@ func main() {
 	secret := os.Getenv("JWT_SECRET")
 	r.Use(middleware.Authentication(secret))
 
-
 	r.Post("/login", controller.Login)
 	r.Post("/signup", controller.SignUp)
 	r.Post("/logout", controller.Logout)

@@ -13,14 +13,14 @@ import (
 func CreateShortURL(c *fiber.Ctx) {
 	longURL := c.FormValue("long_url")
 
-	if longURL == "" {	
+	if longURL == "" {
 		c.Status(400).JSON(fiber.Map{
 			"error": "Long URL is required",
 		})
 		return
 	}
 
-	_, err := url.ParseRequestURI(longURL)	
+	_, err := url.ParseRequestURI(longURL)
 
 	if err != nil {
 		c.Status(400).JSON(fiber.Map{
@@ -30,7 +30,7 @@ func CreateShortURL(c *fiber.Ctx) {
 	}
 
 	shortURL := models.ShortURL{
-		LongURL: longURL,
+		LongURL:  longURL,
 		ShortKey: generateShortKey(),
 	}
 
@@ -63,7 +63,7 @@ func generateShortKey() string {
 }
 
 func RedirectShortURL(c *fiber.Ctx) {
-	shortURL :=models.ShortURL{}
+	shortURL := models.ShortURL{}
 
 	database.Db.First(&shortURL, "short_key = ?", c.Params("shortkey"))
 
@@ -74,5 +74,5 @@ func RedirectShortURL(c *fiber.Ctx) {
 		return
 	}
 
-	c.Redirect(shortURL.LongURL, 301)	
+	c.Redirect(shortURL.LongURL, 301)
 }

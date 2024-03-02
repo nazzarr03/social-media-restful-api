@@ -18,11 +18,11 @@ import (
 )
 
 type SignUpRequest struct {
-	Name     string  `json:"name"`
-	Surname  string  `json:"surname"`
-	Username string  `json:"username"`
-	Email    string  `json:"email"`
-	Password string  `json:"password"`
+	Name     string `json:"name"`
+	Surname  string `json:"surname"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type LoginRequest struct {
