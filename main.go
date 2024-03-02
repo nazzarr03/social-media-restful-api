@@ -32,6 +32,7 @@ func main() {
 	r.Post("/createpost/:id", controller.CreatePost)
 	r.Post("/editpost/:userid/:postid", controller.EditPost)
 	r.Post("/deletepost/:userid/:postid", controller.DeletePost)
+	r.Get("/getpost/:userid/:postid", controller.GetPosts)
 
 	r.Post("/addcomment/:userid/:postid", controller.AddCommentToPost)
 	r.Post("/addsubcomment/:userid/:postid/:commentid", controller.AddCommentToComment)
@@ -41,6 +42,9 @@ func main() {
 
 	r.Post("/addfriend/:userid/:friendid", controller.AddFriend)
 	r.Post("/removefriend/:userid/:friendid", controller.RemoveFriend)
+
+	r.Post("/createshorturl", controller.CreateShortURL)
+	r.Post("/redirect/:shortkey", controller.RedirectShortURL)
 
 	r.Listen(":3000")
 }

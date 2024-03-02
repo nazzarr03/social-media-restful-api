@@ -286,4 +286,27 @@ func DeletePost(c *fiber.Ctx) {
 	})
 }
 
-// post beğenme endpointi buraya gelecek.
+func GetPosts(c *fiber.Ctx) {
+	post := models.Post{}
+	user := models.User{}
+
+	database.Db.Find(&user, "user_id = ?", c.Params("userid"))
+
+	if user.UserID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+		return
+	}
+
+	database.Db.Find(&post, "post_id = ?", c.Params("postid"))
+
+	if post.PostID == 0 {
+		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Post not found",
+		})
+		return
+	}
+
+	c.Status(fiber.StatusOK).JSON(post)
+}
