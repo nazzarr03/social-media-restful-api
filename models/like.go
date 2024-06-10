@@ -6,8 +6,8 @@ import (
 
 type Like struct {
 	LikeID    int       `json:"like_id" gorm:"primaryKey;autoIncrement"`
-	UserID    int       `json:"user_id" gorm:"not null"`
-	PostID    int       `json:"post_id" gorm:"not null"`
+	UserID    int       `json:"user_id"`
+	PostID    int       `json:"post_id"`
 	CommentID *int      `json:"comment_id"`
 	IsLiked   bool      `json:"is_liked" gorm:"default:false"`
 	CreatedAt time.Time `gorm:"default:current_timestamp"`

@@ -1,37 +1,22 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/cloudinary/cloudinary-go"
-	"github.com/cloudinary/cloudinary-go/api/admin"
-	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/gofiber/fiber"
 	"github.com/nazzarr03/social-media-restful-api/database"
+	"github.com/nazzarr03/social-media-restful-api/dto"
 	"github.com/nazzarr03/social-media-restful-api/middleware"
 	"github.com/nazzarr03/social-media-restful-api/models"
+	"github.com/nazzarr03/social-media-restful-api/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type SignUpRequest struct {
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func SignUp(c *fiber.Ctx) {
-	var request SignUpRequest
+	var request dto.SignUpRequest
 
 	if err := c.BodyParser(&request); err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -63,7 +48,7 @@ func SignUp(c *fiber.Ctx) {
 }
 
 func Login(c *fiber.Ctx) {
-	var request LoginRequest
+	var request dto.LoginRequest
 
 	if err := c.BodyParser(&request); err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -132,9 +117,9 @@ func Logout(c *fiber.Ctx) {
 
 	token := parts[1]
 
-	result := database.Db.Exec("INSERT INTO blacklists (token) VALUES (?)", token)
+	database.Db.Exec("INSERT INTO blacklists (token) VALUES (?)", token)
 
-	if result.Error != nil {
+	if database.Db.Error != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Cannot blacklist token",
 		})
@@ -165,26 +150,18 @@ func UploadProfilePicture(c *fiber.Ctx) {
 		return
 	}
 
-	cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-	apiKey := os.Getenv("CLOUDINARY_API_KEY")
-	apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-	cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+	cld, err := utils.ConnectToCloudinary()
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot connect to cloudinary",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	var ctx = context.Background()
-
-	resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
+	resp, err := utils.UploadToCloudinary(cld, tempFilePath)
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot upload image",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -233,28 +210,17 @@ func UpdateProfilePicture(c *fiber.Ctx) {
 
 	publicID := strings.Split(lastPart, ".")[0]
 
-	cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-	apiKey := os.Getenv("CLOUDINARY_API_KEY")
-	apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-	cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+	cld, err := utils.ConnectToCloudinary()
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot connect to cloudinary",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	var ctx = context.Background()
-
-	_, err = cld.Admin.DeleteAssets(ctx, admin.DeleteAssetsParams{
-		PublicIDs: []string{publicID},
-	})
-
-	if err != nil {
+	if err := utils.DeleteFromCloudinary(cld, publicID); err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot delete image",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -277,11 +243,10 @@ func UpdateProfilePicture(c *fiber.Ctx) {
 		return
 	}
 
-	resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
+	resp, err := utils.UploadToCloudinary(cld, tempFilePath)
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Cannot upload image",
+			"error": err.Error(),
 		})
 		return
 	}

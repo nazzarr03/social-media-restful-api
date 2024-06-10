@@ -1,27 +1,20 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/cloudinary/cloudinary-go"
-	"github.com/cloudinary/cloudinary-go/api/admin"
-	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/gofiber/fiber"
 	"github.com/nazzarr03/social-media-restful-api/database"
+	"github.com/nazzarr03/social-media-restful-api/dto"
 	"github.com/nazzarr03/social-media-restful-api/models"
+	"github.com/nazzarr03/social-media-restful-api/utils"
 )
 
-type CreateAndEditPostRequest struct {
-	Content  string  `json:"content"`
-	ImageURL *string `json:"image_url"`
-}
-
 func CreatePost(c *fiber.Ctx) {
-	var request CreateAndEditPostRequest
+	var request dto.CreatePostRequest
 
 	post := models.Post{}
 	user := models.User{}
@@ -41,45 +34,41 @@ func CreatePost(c *fiber.Ctx) {
 	}
 
 	file, err := c.FormFile("post_picture")
-
-	if err == nil {
-		tempFilePath := fmt.Sprintf("./uploads/%s", file.Filename)
-
-		if err := c.SaveFile(file, tempFilePath); err != nil {
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot save file",
-			})
-			return
-		}
-
-		cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-		apiKey := os.Getenv("CLOUDINARY_API_KEY")
-		apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-		cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
-		if err != nil {
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot connect to cloudinary",
-			})
-			return
-		}
-
-		var ctx = context.Background()
-
-		resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
-		if err != nil {
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot upload image",
-			})
-			return
-		}
-
-		os.Remove(tempFilePath)
-
-		post.ImageURL = &resp.SecureURL
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+		return
 	}
+
+	tempFilePath := fmt.Sprintf("./uploads/%s", file.Filename)
+
+	if err := c.SaveFile(file, tempFilePath); err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Cannot save file",
+		})
+		return
+	}
+
+	cld, err := utils.ConnectToCloudinary()
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	resp, err := utils.UploadToCloudinary(cld, tempFilePath)
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	os.Remove(tempFilePath)
+
+	post.ImageURL = &resp.SecureURL
 
 	database.Db.First(&user, "user_id = ?", c.Params("id"))
 
@@ -106,7 +95,7 @@ func CreatePost(c *fiber.Ctx) {
 }
 
 func EditPost(c *fiber.Ctx) {
-	var request CreateAndEditPostRequest
+	var request dto.EditPostRequest
 
 	post := models.Post{}
 	user := models.User{}
@@ -146,33 +135,22 @@ func EditPost(c *fiber.Ctx) {
 	file, err := c.FormFile("post_picture")
 
 	if err == nil {
-		cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-		apiKey := os.Getenv("CLOUDINARY_API_KEY")
-		apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-		cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+		cld, err := utils.ConnectToCloudinary()
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot connect to cloudinary",
+				"error": err.Error(),
 			})
 			return
 		}
-
-		var ctx = context.Background()
 
 		if post.ImageURL != nil {
 			lastPart := path.Base(*post.ImageURL)
 
 			publicID := strings.Split(lastPart, ".")[0]
 
-			_, err = cld.Admin.DeleteAssets(ctx, admin.DeleteAssetsParams{
-				PublicIDs: []string{publicID},
-			})
-
-			if err != nil {
+			if err := utils.DeleteFromCloudinary(cld, publicID); err != nil {
 				c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": "Cannot delete image",
+					"error": err.Error(),
 				})
 				return
 			}
@@ -187,11 +165,10 @@ func EditPost(c *fiber.Ctx) {
 			return
 		}
 
-		resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
+		resp, err := utils.UploadToCloudinary(cld, tempFilePath)
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot upload image",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -241,32 +218,21 @@ func DeletePost(c *fiber.Ctx) {
 	}
 
 	if post.ImageURL != nil {
-		cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-		apiKey := os.Getenv("CLOUDINARY_API_KEY")
-		apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-		cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+		cld, err := utils.ConnectToCloudinary()
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot connect to cloudinary",
+				"error": err.Error(),
 			})
 			return
 		}
-
-		var ctx = context.Background()
 
 		lastPart := path.Base(*post.ImageURL)
 
 		publicID := strings.Split(lastPart, ".")[0]
 
-		_, err = cld.Admin.DeleteAssets(ctx, admin.DeleteAssetsParams{
-			PublicIDs: []string{publicID},
-		})
-
-		if err != nil {
+		if err := utils.DeleteFromCloudinary(cld, publicID); err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot delete image",
+				"error": err.Error(),
 			})
 			return
 		}

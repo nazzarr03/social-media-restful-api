@@ -1,24 +1,18 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	"github.com/cloudinary/cloudinary-go"
-	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/gofiber/fiber"
 	"github.com/nazzarr03/social-media-restful-api/database"
+	"github.com/nazzarr03/social-media-restful-api/dto"
 	"github.com/nazzarr03/social-media-restful-api/models"
+	"github.com/nazzarr03/social-media-restful-api/utils"
 )
 
-type AddCommentRequest struct {
-	Content  string  `json:"content"`
-	ImageURL *string `json:"image_url"`
-}
-
 func AddCommentToPost(c *fiber.Ctx) {
-	var request AddCommentRequest
+	var request dto.AddCommentRequest
 
 	user := models.User{}
 	post := models.Post{}
@@ -57,7 +51,14 @@ func AddCommentToPost(c *fiber.Ctx) {
 
 	file, err := c.FormFile("comment_picture")
 
-	if err == nil {
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Cannot save file",
+		})
+		return
+	}
+
+	if file != nil {
 		tempFilePath := fmt.Sprintf("./uploads/%s", file.Filename)
 
 		if err := c.SaveFile(file, tempFilePath); err != nil {
@@ -67,26 +68,18 @@ func AddCommentToPost(c *fiber.Ctx) {
 			return
 		}
 
-		cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-		apiKey := os.Getenv("CLOUDINARY_API_KEY")
-		apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-		cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+		cld, err := utils.ConnectToCloudinary()
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot connect to cloudinary",
+				"error": err.Error(),
 			})
 			return
 		}
 
-		var ctx = context.Background()
-
-		resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
+		resp, err := utils.UploadToCloudinary(cld, tempFilePath)
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot upload image",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -116,7 +109,7 @@ func AddCommentToPost(c *fiber.Ctx) {
 }
 
 func AddCommentToComment(c *fiber.Ctx) {
-	var request AddCommentRequest
+	var request dto.AddCommentRequest
 
 	user := models.User{}
 	post := models.Post{}
@@ -164,8 +157,14 @@ func AddCommentToComment(c *fiber.Ctx) {
 	}
 
 	file, err := c.FormFile("comment_picture")
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Cannot save file",
+		})
+		return
+	}
 
-	if err == nil {
+	if file != nil {
 		tempFilePath := fmt.Sprintf("./uploads/%s", file.Filename)
 
 		if err := c.SaveFile(file, tempFilePath); err != nil {
@@ -175,26 +174,18 @@ func AddCommentToComment(c *fiber.Ctx) {
 			return
 		}
 
-		cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-		apiKey := os.Getenv("CLOUDINARY_API_KEY")
-		apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-		cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-
+		cld, err := utils.ConnectToCloudinary()
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot connect to cloudinary",
+				"error": err.Error(),
 			})
 			return
 		}
 
-		var ctx = context.Background()
-
-		resp, err := cld.Upload.Upload(ctx, tempFilePath, uploader.UploadParams{})
-
+		resp, err := utils.UploadToCloudinary(cld, tempFilePath)
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Cannot upload image",
+				"error": err.Error(),
 			})
 			return
 		}
